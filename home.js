@@ -1,5 +1,7 @@
 const { createServer } = require("http");
 const { Server } = require("socket.io");
+const pool = require("./sql");
+
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -21,13 +23,35 @@ io.on('connection', (socket) => {
 
     socket.on("save-task", (args, callback) => {
         console.log(args);
-        callback({
-            task_id: task_id++
+        let sql = "INSERT INTO main_usertodo " +
+            "(id, task, finished, user_id, due_date) " +
+            "VALUE (" +
+            task_id + ", " +
+            "'" + args.content + "', " +
+            "false, " +
+            args.id + ", " +
+            "'" + args.date + "'" +
+            ")"
+        console.log(sql);
+        let err_flag = false;
+        pool.query(sql, function(err, result) {
+            console.log(result);
+            if (err) err_flag = true;
+            else
+                callback({
+                    task_id: result.insertId,
+                    flag: err_flag
+                })
         })
     })
 
     socket.on("check-task", (args) => {
         console.log(args)
+        let sql = "UPDATE main_usertodo SET finished="+args.checked+" WHERE id="+args.task_id
+        let err_flag = false;
+        pool.query(sql, function(err, result) {
+            if (err) err_flag = true;
+        })
     })
 
     socket.on("delete-task", (args) => {
