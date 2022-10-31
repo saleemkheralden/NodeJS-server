@@ -18,11 +18,9 @@ io.on('connection', (socket) => {
 
     socket.on("new-connection", (userid) => {
         sockets[userid] = socket.id;
-        console.log(sockets);
     })
 
     socket.on("save-task", (args, callback) => {
-        console.log(args);
         let sql = "INSERT INTO main_usertodo " +
             "(id, task, finished, user_id, due_date) " +
             "VALUE (" +
@@ -32,21 +30,21 @@ io.on('connection', (socket) => {
             args.id + ", " +
             "'" + args.date + "'" +
             ")"
-        console.log(sql);
         let err_flag = false;
         pool.query(sql, function(err, result) {
-            console.log(result);
             if (err) err_flag = true;
-            else
+            else {
+                console.log("saving task " + result.insertId)
                 callback({
                     task_id: result.insertId,
                     flag: err_flag
                 })
+            }
         })
     })
 
     socket.on("check-task", (args) => {
-        console.log(args)
+        console.log("updating task " + args.task_id)
         let sql = "UPDATE main_usertodo SET finished="+args.checked+" WHERE id="+args.task_id
         let err_flag = false;
         pool.query(sql, function(err, result) {
@@ -55,7 +53,13 @@ io.on('connection', (socket) => {
     })
 
     socket.on("delete-task", (args) => {
-        console.log(args);
+        if (args.task_id !== '') {
+            console.log("deleting task " + args.task_id)
+            let sql = "DELETE FROM main_usertodo WHERE id=" + args.task_id
+            pool.query(sql, (err, result) => {
+                if (err) console.log(err);
+            })
+        }
     })
 
     socket.on('disconnected', () => {
