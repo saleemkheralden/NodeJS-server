@@ -13,6 +13,8 @@ const io = new Server(httpServer, {
 
 const sockets = {}
 let task_id = 0;
+const s = 'Home server> ';
+const port = 3001;
 
 io.on('connection', (socket) => {
 
@@ -34,7 +36,7 @@ io.on('connection', (socket) => {
         pool.query(sql, function(err, result) {
             if (err) err_flag = true;
             else {
-                console.log("saving task " + result.insertId)
+                console.log(s, "saving task " + result.insertId)
                 callback({
                     task_id: result.insertId,
                     flag: err_flag
@@ -44,7 +46,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on("check-task", (args) => {
-        console.log("updating task " + args.task_id)
+        console.log(s, "updating task " + args.task_id)
         let sql = "UPDATE main_usertodo SET finished="+args.checked+" WHERE id="+args.task_id
         let err_flag = false;
         pool.query(sql, function(err, result) {
@@ -54,7 +56,7 @@ io.on('connection', (socket) => {
 
     socket.on("delete-task", (args) => {
         if (args.task_id !== '') {
-            console.log("deleting task " + args.task_id)
+            console.log(s, "deleting task " + args.task_id)
             let sql = "DELETE FROM main_usertodo WHERE id=" + args.task_id
             pool.query(sql, (err, result) => {
                 if (err) console.log(err);
@@ -66,10 +68,10 @@ io.on('connection', (socket) => {
 
     })
 
-    console.log('new connection', socket.id);
+    console.log(s, 'new connection', socket.id);
 });
 
 
-httpServer.listen(3001);
-console.log("Server running...")
+httpServer.listen(port);
+console.log(s, "Server running on port", port);
 

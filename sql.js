@@ -7,10 +7,11 @@ const pool = mysql.createPool({
     password: 'F5#2b959628D3E70c6@4df',
     database: 'study'
 });
+const s = 'SQL> ';
 
 pool.getConnection((err, connection) => {
     if (err) throw err;
-    console.log('Database connected');
+    console.log(s, 'Database connected');
     connection.release();
 })
 
