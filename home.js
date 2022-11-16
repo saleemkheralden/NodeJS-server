@@ -6,7 +6,7 @@ const pool = require("./sql");
 const httpServer = createServer();
 const io = new Server(httpServer, {
     cors: {
-        // origin: "http://192.168.1.15:8000"
+        origin: "http://127.0.0.1:8000"
         // origin: 'http://172.20.10.2:8000'
     }
 });
@@ -64,8 +64,39 @@ io.on('connection', (socket) => {
         }
     })
 
-    socket.on('disconnected', () => {
+    socket.on('get-messages', (args, callback) => {
+        let sql = "SELECT *\n" +
+            "FROM main_chatlog\n" +
+            "WHERE\n" +
+            "    (from_user_id=" + args.uid + " AND to_user_id=" + args.other_id + ") OR\n" +
+            "    (from_user_id=" + args.other_id + " AND to_user_id=" + args.uid + ")\n" +
+            "LIMIT 10;"
+        pool.query(sql, (err, result) => {
+            if (err) console.log(err);
+            else {
+                console.log(s, 'getting messages of user', args.uid);
+                for (let e of result) e.date = e.date.toLocaleString();
+                callback({
+                    messages: result,
+                });
+            }
+        })
+    })
 
+    socket.on("send-msg", args => {
+       console.log(args);
+       console.log('sending to', args['to'], sockets[args['to']])
+       socket.to(sockets[args['to']]).emit("recv-msg", args);
+    });
+
+    socket.on('disconnecting', (arg) => {
+        // console.log(arg);
+        // console.log(socket.id);
+        // console.log("Disconnected");
+    })
+
+    socket.on('see-users', () => {
+        console.log(sockets);
     })
 
     console.log(s, 'new connection', socket.id);
