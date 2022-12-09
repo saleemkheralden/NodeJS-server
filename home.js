@@ -11,16 +11,41 @@ const io = new Server(httpServer, {
     }
 });
 
-const sockets = {}
+const userid_sockets = {}
+const sockets_userid = {}
+
 let task_id = 0;
 const s = 'Home server> ';
 const port = 3001;
 
+// const users = {}
+
+// const users = {
+//                  userid: {
+//                              friends: [ ids ]
+//                          }
+//               }
+
+
 io.on('connection', (socket) => {
 
     socket.on("new-connection", (userid) => {
-        sockets[userid] = socket.id;
-    })
+        userid_sockets[userid] = socket.id;
+        sockets_userid[socket.id] = userid;
+
+
+        let sql = "SELECT user1_id, user2_id FROM main_friendslist " +
+            "WHERE user1_id=" + userid + " OR user2_id=" + userid;
+        pool.query(sql, (err, result) => {
+            if (err) console.log(err);
+            else {
+                for (let e of result) {
+                    let friend_socketid = userid_sockets[e.user1_id == userid ? e.user2_id : e.user1_id];
+                    socket.to(friend_socketid).emit("friend-connected", {id: userid})
+                }
+            }
+        });
+    });
 
     socket.on("save-task", (args, callback) => {
         let sql = "INSERT INTO main_usertodo " +
@@ -70,6 +95,7 @@ io.on('connection', (socket) => {
             "WHERE\n" +
             "    (from_user_id=" + args.uid + " AND to_user_id=" + args.other_id + ") OR\n" +
             "    (from_user_id=" + args.other_id + " AND to_user_id=" + args.uid + ")\n" +
+            "ORDER BY DATE DESC\n" +
             "LIMIT 10;"
         pool.query(sql, (err, result) => {
             if (err) console.log(err);
@@ -84,19 +110,92 @@ io.on('connection', (socket) => {
     })
 
     socket.on("send-msg", args => {
-       console.log(args);
-       console.log('sending to', args['to'], sockets[args['to']])
-       socket.to(sockets[args['to']]).emit("recv-msg", args);
+       // console.log(args);
+       let sql = "INSERT INTO main_chatlog (message, date, from_user_id, to_user_id) " +
+           "VALUES ('" +
+           args['content'] + "', '" +
+           args['date'] + "', " +
+           args['from'] + ", " +
+           args['to'] + ")";
+
+       // console.log(sql);
+       pool.query(sql, (err, result) => {
+          if (err) console.log(err);
+          else {
+
+          }
+       });
+
+       if (userid_sockets[args['to']]) {
+           console.log('sending to', args['to'], userid_sockets[args['to']]);
+           socket.to(userid_sockets[args['to']]).emit("recv-msg", args);
+       }
+
     });
 
+    socket.on("accept-user", (args) => {
+        console.log(args);
+        let sql = "UPDATE main_friendslist \n" +
+            "SET status='-' \n" +
+            "WHERE user1_id=" + args['user1'] + " AND  user2_id=" + args['user2'];
+        pool.query(sql, (err, result) => {
+            if (err) console.log(err);
+            else {}
+        })
+    })
+
+    socket.on("reject-user", (args) => {
+        let sql = "DELETE FROM main_friendslist \n" +
+            "WHERE user1_id=" + args['user1'] + " AND  user2_id=" + args['user2'];
+        pool.query(sql, (err, result) => {
+            if (err) console.log(err);
+            else {}
+        })
+    })
+
+    socket.on('check-online', (args, callback) => {
+        callback({
+            "online": userid_sockets[args.id] !== undefined
+        })
+    })
+
     socket.on('disconnecting', (arg) => {
-        // console.log(arg);
-        // console.log(socket.id);
-        // console.log("Disconnected");
+        console.log(arg);
+        console.log(socket.id);
+
+        let userid = sockets_userid[socket.id];
+        let sql = "SELECT user1_id, user2_id FROM main_friendslist " +
+            "WHERE user1_id=" + userid + " OR user2_id=" + userid;
+        pool.query(sql, (err, result) => {
+            if (err) console.log(err);
+            else {
+                for (let e of result) {
+                    let friend_socketid = userid_sockets[e.user1_id == userid ? e.user2_id : e.user1_id];
+                    socket.to(friend_socketid).emit("friend-disconnected", {id: userid})
+                }
+            }
+        });
+
+        delete userid_sockets[sockets_userid[socket.id]]
+        delete sockets_userid[socket.id]
+
+        console.log("Disconnected");
+
+
+
     })
 
     socket.on('see-users', () => {
-        console.log(sockets);
+        console.log(userid_sockets);
+        console.log(sockets_userid);
+    })
+
+    socket.on('count-users', () => {
+        console.log(userid_sockets.length);
+    })
+
+    socket.on('ping', () => {
+        console.log('ping');
     })
 
     console.log(s, 'new connection', socket.id);
