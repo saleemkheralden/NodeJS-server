@@ -96,7 +96,9 @@ io.on('connection', (socket) => {
             "    (from_user_id=" + args.uid + " AND to_user_id=" + args.other_id + ") OR\n" +
             "    (from_user_id=" + args.other_id + " AND to_user_id=" + args.uid + ")\n" +
             "ORDER BY DATE DESC\n" +
-            "LIMIT 10;"
+            "LIMIT 100;"
+
+        console.log(sql);
         pool.query(sql, (err, result) => {
             if (err) console.log(err);
             else {
@@ -118,7 +120,7 @@ io.on('connection', (socket) => {
            args['from'] + ", " +
            args['to'] + ")";
 
-       // console.log(sql);
+       console.log(sql);
        pool.query(sql, (err, result) => {
           if (err) console.log(err);
           else {
@@ -132,6 +134,18 @@ io.on('connection', (socket) => {
        }
 
     });
+
+    socket.on('read-messages', args => {
+        console.log(args);
+        let sql = "UPDATE main_chatlog\n" +
+            "SET main_chatlog.read=true\n" +
+            "WHERE from_user_id=" + args.other_id + " AND to_user_id=" + args.uid + ";";
+
+        pool.query(sql, (err, result) => {
+            if (err) console.log(err);
+            else {}
+        })
+    })
 
     socket.on("accept-user", (args) => {
         console.log(args);
@@ -159,11 +173,13 @@ io.on('connection', (socket) => {
         })
     })
 
-    socket.on('disconnecting', (arg) => {
-        console.log(arg);
-        console.log(socket.id);
+    socket.on('user-disconnected', args => {
+        // let userid = sockets_userid[socket.id];
 
-        let userid = sockets_userid[socket.id];
+
+        console.log("user-disconnected");
+
+        let userid = args['userid'];
         let sql = "SELECT user1_id, user2_id FROM main_friendslist " +
             "WHERE user1_id=" + userid + " OR user2_id=" + userid;
         pool.query(sql, (err, result) => {
@@ -178,11 +194,12 @@ io.on('connection', (socket) => {
 
         delete userid_sockets[sockets_userid[socket.id]]
         delete sockets_userid[socket.id]
+    })
 
+    socket.on('disconnecting', (arg) => {
+        console.log(arg);
+        console.log(socket.id);
         console.log("Disconnected");
-
-
-
     })
 
     socket.on('see-users', () => {
