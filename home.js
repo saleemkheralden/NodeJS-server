@@ -98,11 +98,11 @@ io.on('connection', (socket) => {
             "ORDER BY DATE DESC\n" +
             "LIMIT 100;"
 
-        console.log(sql);
+        // console.log(sql);
         pool.query(sql, (err, result) => {
             if (err) console.log(err);
             else {
-                console.log(s, 'getting messages of user', args.uid);
+                console.log(s, 'getting messages of users', args.uid, args.other_id);
                 for (let e of result) e.date = e.date.toLocaleString();
                 callback({
                     messages: result,
@@ -120,7 +120,7 @@ io.on('connection', (socket) => {
            args['from'] + ", " +
            args['to'] + ")";
 
-       console.log(sql);
+       // console.log(sql);
        pool.query(sql, (err, result) => {
           if (err) console.log(err);
           else {
@@ -136,7 +136,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('read-messages', args => {
-        console.log(args);
+        // console.log(args);
         let sql = "UPDATE main_chatlog\n" +
             "SET main_chatlog.read=true\n" +
             "WHERE from_user_id=" + args.other_id + " AND to_user_id=" + args.uid + ";";
@@ -173,12 +173,7 @@ io.on('connection', (socket) => {
         })
     })
 
-    socket.on('user-disconnected', args => {
-        // let userid = sockets_userid[socket.id];
-
-
-        console.log("user-disconnected");
-
+    function friend_offline_away(args, emit_status) {
         let userid = args['userid'];
         let sql = "SELECT user1_id, user2_id FROM main_friendslist " +
             "WHERE user1_id=" + userid + " OR user2_id=" + userid;
@@ -187,13 +182,28 @@ io.on('connection', (socket) => {
             else {
                 for (let e of result) {
                     let friend_socketid = userid_sockets[e.user1_id == userid ? e.user2_id : e.user1_id];
-                    socket.to(friend_socketid).emit("friend-disconnected", {id: userid})
+                    socket.to(friend_socketid).emit(emit_status, {id: userid})
                 }
             }
         });
+    }
+
+    socket.on('user-disconnected', args => {
+        // let userid = sockets_userid[socket.id];
+
+
+        console.log("user-disconnected");
+
+        friend_offline_away(args, "friend-disconnected");
 
         delete userid_sockets[sockets_userid[socket.id]]
         delete sockets_userid[socket.id]
+    })
+
+    socket.on('user-away', args => {
+        console.log('user-away');
+        friend_offline_away(args, "friend-away");
+
     })
 
     socket.on('disconnecting', (arg) => {
