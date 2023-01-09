@@ -1,5 +1,6 @@
 #!/bin/bash
-peerjs --port 3002 &
+#peerjs --port 3002 &
+node peer.js &
 node streaming.js &
 node home.js &
 jobs -l

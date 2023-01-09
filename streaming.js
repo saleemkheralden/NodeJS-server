@@ -1,10 +1,14 @@
-const { createServer } = require("http");
+const { createServer } = require("https");
 const { Server } = require("socket.io");
+const {readFileSync} = require("fs");
 
 // const mysql = require("mysql");
 const port = 3000;
 const s = 'Streaming server> ';
-const httpServer = createServer();
+const httpServer = createServer({
+    key: readFileSync('/home/saleem/Desktop/Web/venv/lib/python3.10/site-packages/sslserver/certs/development.key'),
+    cert: readFileSync('/home/saleem/Desktop/Web/venv/lib/python3.10/site-packages/sslserver/certs/development.crt')
+});
 const io = new Server(httpServer, {
     cors: {
         // origin: "http://192.168.1.43:8000",

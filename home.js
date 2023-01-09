@@ -1,12 +1,16 @@
-const { createServer } = require("http");
+const { readFileSync } = require("fs");
+const { createServer } = require("https");
 const { Server } = require("socket.io");
 const pool = require("./sql");
 
 
-const httpServer = createServer();
+const httpServer = createServer({
+    key: readFileSync('/home/saleem/Desktop/Web/venv/lib/python3.10/site-packages/sslserver/certs/development.key'),
+    cert: readFileSync('/home/saleem/Desktop/Web/venv/lib/python3.10/site-packages/sslserver/certs/development.crt')
+});
 const io = new Server(httpServer, {
     cors: {
-        origin: "http://127.0.0.1:8000"
+        // origin: "http://127.0.0.1:8000"
         // origin: 'http://172.20.10.2:8000'
     }
 });
@@ -201,9 +205,8 @@ io.on('connection', (socket) => {
     })
 
     socket.on('user-away', args => {
-        console.log('user-away');
+        console.log('user-away', args);
         friend_offline_away(args, "friend-away");
-
     })
 
     socket.on('disconnecting', (arg) => {
