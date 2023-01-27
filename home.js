@@ -210,9 +210,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('disconnecting', (arg) => {
-        console.log(arg);
-        console.log(socket.id);
-        console.log("Disconnected");
+        console.log(s, socket.id, "Disconnected", arg);
     })
 
     socket.on('see-users', () => {

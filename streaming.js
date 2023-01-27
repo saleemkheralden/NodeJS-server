@@ -15,20 +15,68 @@ const io = new Server(httpServer, {
     }
 });
 
+
+let rooms = {}
+let users = {}
+
 io.on("connection", (socket) => {
     socket.on('join-room', (args) => {
-        socket.join(args.rid);
-        socket.broadcast.to(args.rid).emit('user-connected', args.uid);
-        console.log(s, 'new connection', args.rid, args.uid);
+        socket.join(args['rid']);
+
+        if (rooms[args['rid']] !== undefined) {
+            rooms[args['rid']].push(args['peer_id']);
+        } else {
+            rooms[args['rid']] = [args['peer_id']];
+        }
+
+        users[socket.id] = {
+            'peer id': args['peer_id'],
+            'room id': args['rid']
+        };
+
+        console.log(socket.id, users[socket.id]);
+        console.log('rooms', rooms);
+
+
+        socket.broadcast.to(args['rid']).emit('user-connected', args['peer_id']);
+        console.log(s, 'new connection', args['rid'], args['peer_id']);
     });
 
     socket.on('test', (arg) => {
         console.log(s + arg);
     });
 
+    socket.on('rooms', () => {
+        console.log(rooms);
+    })
+
+    socket.on('users', () => {
+        console.log(users);
+    })
+
+    socket.on('users in room', (args, callback) => {
+        callback({
+            ids: rooms[args.rid],
+        })
+    })
+
+    socket.on('disconnecting', (arg) => {
+        // console.log(arg);
+
+        console.log(socket.id, users[socket.id]);
+        console.log('rooms', rooms);
+        // console.log('arg', arg);
+        if (users[socket.id] !== undefined) {
+            let room = rooms[users[socket.id]['room id']];
+            room.splice(room.indexOf(users[socket.id]['peer id']), 1);
+            socket.broadcast.to(users[socket.id]['room id'])
+                .emit('user-disconnected', users[socket.id]['peer id']);
+        }
+        console.log(s, socket.id, "Disconnected");
+    })
+
+
     console.log(s,'new connection', socket.id);
-    // io.emit("welcome-from-server", "hello from server");
-    // console.log('sent "hello from server"')
 });
 
 
