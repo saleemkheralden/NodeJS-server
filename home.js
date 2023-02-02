@@ -38,7 +38,7 @@ io.on('connection', (socket) => {
         sockets_userid[socket.id] = userid;
 
 
-        let sql = "SELECT user1_id, user2_id FROM main_friendslist " +
+        let sql = "SELECT user1_id, user2_id FROM index_friendslist " +
             "WHERE user1_id=" + userid + " OR user2_id=" + userid;
         pool.query(sql, (err, result) => {
             if (err) console.log(err);
@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on("save-task", (args, callback) => {
-        let sql = "INSERT INTO main_usertodo " +
+        let sql = "INSERT INTO index_usertodo " +
             "(id, task, finished, user_id, due_date) " +
             "VALUE (" +
             task_id + ", " +
@@ -76,7 +76,7 @@ io.on('connection', (socket) => {
 
     socket.on("check-task", (args) => {
         console.log(s, "updating task " + args.task_id)
-        let sql = "UPDATE main_usertodo SET finished="+args.checked+" WHERE id="+args.task_id
+        let sql = "UPDATE index_usertodo SET finished="+args.checked+" WHERE id="+args.task_id
         let err_flag = false;
         pool.query(sql, function(err, result) {
             if (err) err_flag = true;
@@ -86,7 +86,7 @@ io.on('connection', (socket) => {
     socket.on("delete-task", (args) => {
         if (args.task_id !== '') {
             console.log(s, "deleting task " + args.task_id)
-            let sql = "DELETE FROM main_usertodo WHERE id=" + args.task_id
+            let sql = "DELETE FROM index_usertodo WHERE id=" + args.task_id
             pool.query(sql, (err, result) => {
                 if (err) console.log(err);
             })
@@ -95,7 +95,7 @@ io.on('connection', (socket) => {
 
     socket.on('get-messages', (args, callback) => {
         let sql = "SELECT *\n" +
-            "FROM main_chatlog\n" +
+            "FROM index_chatlog\n" +
             "WHERE\n" +
             "    (from_user_id=" + args.uid + " AND to_user_id=" + args.other_id + ") OR\n" +
             "    (from_user_id=" + args.other_id + " AND to_user_id=" + args.uid + ")\n" +
@@ -117,7 +117,7 @@ io.on('connection', (socket) => {
 
     socket.on("send-msg", args => {
        // console.log(args);
-       let sql = "INSERT INTO main_chatlog (message, date, from_user_id, to_user_id) " +
+       let sql = "INSERT INTO index_chatlog (message, date, from_user_id, to_user_id) " +
            "VALUES ('" +
            args['content'] + "', '" +
            args['date'] + "', " +
@@ -141,8 +141,8 @@ io.on('connection', (socket) => {
 
     socket.on('read-messages', args => {
         // console.log(args);
-        let sql = "UPDATE main_chatlog\n" +
-            "SET main_chatlog.read=true\n" +
+        let sql = "UPDATE index_chatlog\n" +
+            "SET index_chatlog.read=true\n" +
             "WHERE from_user_id=" + args.other_id + " AND to_user_id=" + args.uid + ";";
 
         pool.query(sql, (err, result) => {
@@ -153,7 +153,7 @@ io.on('connection', (socket) => {
 
     socket.on("accept-user", (args) => {
         console.log(args);
-        let sql = "UPDATE main_friendslist \n" +
+        let sql = "UPDATE index_friendslist \n" +
             "SET status='-' \n" +
             "WHERE user1_id=" + args['user1'] + " AND  user2_id=" + args['user2'];
         pool.query(sql, (err, result) => {
@@ -163,7 +163,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on("reject-user", (args) => {
-        let sql = "DELETE FROM main_friendslist \n" +
+        let sql = "DELETE FROM index_friendslist \n" +
             "WHERE user1_id=" + args['user1'] + " AND  user2_id=" + args['user2'];
         pool.query(sql, (err, result) => {
             if (err) console.log(err);
@@ -179,7 +179,7 @@ io.on('connection', (socket) => {
 
     function friend_offline_away(args, emit_status) {
         let userid = args['userid'];
-        let sql = "SELECT user1_id, user2_id FROM main_friendslist " +
+        let sql = "SELECT user1_id, user2_id FROM index_friendslist " +
             "WHERE user1_id=" + userid + " OR user2_id=" + userid;
         pool.query(sql, (err, result) => {
             if (err) console.log(err);
