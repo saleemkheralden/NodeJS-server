@@ -34,12 +34,8 @@ io.on("connection", (socket) => {
             'room id': args['rid']
         };
 
-        console.log(socket.id, users[socket.id]);
-        console.log('rooms', rooms);
-
-
         socket.broadcast.to(args['rid']).emit('user-connected', args['peer_id']);
-        console.log(s, 'new connection', args['rid'], args['peer_id']);
+        console.log(s, 'join room', args['rid'] ,'event with peer id',  args['peer_id']);
     });
 
     socket.on('test', (arg) => {
@@ -63,12 +59,18 @@ io.on("connection", (socket) => {
     socket.on('disconnecting', (arg) => {
         // console.log(arg);
 
-        console.log(socket.id, users[socket.id]);
-        console.log('rooms', rooms);
+        // console.log(socket.id, users[socket.id]);
+        // console.log('rooms', rooms);
         // console.log('arg', arg);
         if (users[socket.id] !== undefined) {
             let room = rooms[users[socket.id]['room id']];
             room.splice(room.indexOf(users[socket.id]['peer id']), 1);
+
+            console.log(s, 'user', users[socket.id]['peer id'], 'left room', users[socket.id]['room id'])
+
+            // if (room.length === 0) {
+            // }
+
             socket.broadcast.to(users[socket.id]['room id'])
                 .emit('user-disconnected', users[socket.id]['peer id']);
         }

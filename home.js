@@ -10,6 +10,8 @@ const httpServer = createServer({
 });
 const io = new Server(httpServer, {
     cors: {
+        // origin: '*'
+        // origin: "https://192.168.1.18:8000"
         // origin: "http://127.0.0.1:8000"
         // origin: 'http://172.20.10.2:8000'
     }
